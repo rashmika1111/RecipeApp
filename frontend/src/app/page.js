@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import styles from './page.module.css';
+import { useRouter } from 'next/navigation'; 
 
 export default function Home() {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,16 +11,16 @@ export default function Home() {
     <div className={styles.container}>
       <div className={styles.homePage}>
         <h1 className={styles.title}>Recipe App</h1>
-        
+
         <div className={styles.authContainer}>
           <div className={styles.authToggle}>
-            <button 
+            <button
               className={`${styles.toggleBtn} ${isLogin ? styles.active : ''}`}
               onClick={() => setIsLogin(true)}
             >
               Login
             </button>
-            <button 
+            <button
               className={`${styles.toggleBtn} ${!isLogin ? styles.active : ''}`}
               onClick={() => setIsLogin(false)}
             >
@@ -28,7 +29,7 @@ export default function Home() {
           </div>
 
           <div className={styles.authForm}>
-            {isLogin ? <LoginForm /> : <RegisterForm />}
+            {isLogin ? <LoginForm /> : <RegisterForm setIsLogin={setIsLogin} />}
           </div>
         </div>
       </div>
@@ -39,10 +40,31 @@ export default function Home() {
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const router = useRouter();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login:', { email, password });
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || 'Login failed');
+      } else {
+        console.log('Login Success:', data);
+        alert(data.message || 'Login Successful!');
+        router.push('/dashboard');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Server error');
+    }
   };
 
   return (
@@ -71,24 +93,44 @@ function LoginForm() {
       <button type="submit" className={styles.submitBtn}>
         Login
       </button>
-
     </form>
   );
 }
 
-function RegisterForm() {
+function RegisterForm({ setIsLogin }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (password !== confirmPassword) {
       alert('Passwords do not match!');
       return;
     }
-    console.log('Register:', { name, email, password });
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || 'Registration failed');
+      } else {
+        console.log('Register Success:', data);
+        alert(data.message || 'Registration Successful!');
+        setIsLogin(true); 
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Server error');
+    }
   };
 
   return (
